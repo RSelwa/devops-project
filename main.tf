@@ -8,10 +8,11 @@ terraform{
 }
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
-  skip_provider_registration = true # This is only required when the User, Service Principal, or Identity running Terraform lacks the permissions to register Azure Resource Providers.
   features {}
 }
+data "client_config" "current" {
 
+}
 # Create a resource group
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
@@ -25,9 +26,8 @@ resource "azurerm_virtual_network" "example" {
   location            = azurerm_resource_group.example.location
   address_space       = ["10.0.0.0/16"]
 }
+# data.azurerm_client_config.current.object_id
 
-
-# Configure the Microsoft Azure Provider
-provider "kubernetes" {
-
-}
+# pull push assignement?
+# subscription id ?
+# ressource role assignement 
