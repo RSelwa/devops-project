@@ -1,3 +1,9 @@
-
-
 ## Ecrivez ici les inscriptions et explications pour déployer l'infrastructure et l'application sur Azure
+
+### Terraform instructions :
+
+command line : <br />
+`refresh` : query infrastructure provider to get to desired state <br />
+`plan` : create an execution plan <br/>
+`apply` execute the plan <br />
+`destroy` destroy ressources/infrastructures
