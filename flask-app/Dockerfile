@@ -9,4 +9,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY . /code
 
 ENTRYPOINT ["python3"]
+
+EXPOSE 8000
+
 CMD ["app.py"]
