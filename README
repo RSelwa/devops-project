@@ -2,14 +2,32 @@
 
 ### Terraform instructions :
 
-az login
-az account list
-récupérer l'id
+D'abord vous devez vous connecter, ici on va faire avec la CLI d'Azure
+`az login`
 
-az account set --subscription="id"
+Une fois connecté, vous pouvez lister les Subscritpions du compte avec `az account list`
 
-command line : <br />
-`refresh` : query infrastructure provider to get to desired state <br />
-`plan` : create an execution plan <br/>
-`apply` execute the plan <br />
-`destroy` destroy ressources/infrastructures
+Vous obtiendrez un résultat de la sorte
+
+```js [
+  {
+    "cloudName": "AzureCloud",
+    "id": "00000000-0000-0000-0000-000000000000",
+    "isDefault": true,
+    "name": "PAYG Subscription",
+    "state": "Enabled",
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "user": {
+      "name": "user@example.com",
+      "type": "user"
+    }
+  }
+]
+```
+
+Vous n'avez plus qu'a informer azure de quel compte utiliser avec la commande `az account set --subscription="SUBSCRIPTION_ID"` où `SUBSCRIPTION_ID ` est l'id récupéré à l'étape précédente
+Vous pouvez aussi configurer ca dans les fichiers mais bon, c'est pas ouf niveau sécu
+
+Après vous pouvez faire un `terraform init` pour intialiser le working directory.
+Une fois que votre configuration est terminée, vous pouvez lancer `terraform plan` pour vérifier que votre configuration est comme vous le souhaitez. Une fois que tout vous convient, lancez un `terrafom apply` pour appliquer vos changements
+Lorsque vous voudrez détruire vos changements, vous pouvez lancer un `terraform destroy`
