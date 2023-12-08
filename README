@@ -2,6 +2,12 @@
 
 ### Terraform instructions :
 
+az login
+az account list
+récupérer l'id
+
+az account set --subscription="id"
+
 command line : <br />
 `refresh` : query infrastructure provider to get to desired state <br />
 `plan` : create an execution plan <br/>

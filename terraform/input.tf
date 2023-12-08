@@ -1,4 +1,5 @@
 # Resource Group/Location
 variable "location" {}
 variable "resource_group" {}
-variable "storage_account_name" {}
+variable "subscription_id" {}
+variable "container_registry_name" {}
