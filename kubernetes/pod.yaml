@@ -1,0 +1,12 @@
+apiVersion: 1
+kind: port
+metadata:
+  name: flask-app
+  label:
+    app: flask-app
+spec:
+  containers:
+    - name: flask-app
+  image: flask-app(Images?)
+  ports:
+    - containerPort: 80
