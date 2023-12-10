@@ -31,3 +31,103 @@ Vous pouvez aussi configurer ca dans les fichiers mais bon, c'est pas ouf niveau
 Après vous pouvez faire un `terraform init` pour intialiser le working directory.
 Une fois que votre configuration est terminée, vous pouvez lancer `terraform plan` pour vérifier que votre configuration est comme vous le souhaitez. Une fois que tout vous convient, lancez un `terrafom apply` pour appliquer vos changements
 Lorsque vous voudrez détruire vos changements, vous pouvez lancer un `terraform destroy`
+
+## Deplyer avec k8 sur azure
+
+On part du principe que vous avez installé minikube sur votre machine et lancé votre instance sur Azure.
+
+Pour vous connecter au cluster k8:
+`az aks get-credentials --overwrite-existing -n <cluster name> -g <resource group name>`
+
+Il faut déployer un ingress controller avec helm avant de deployer nos applications
+Pour ce faire,vous pouvez lancer cette commande :
+
+```helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --create-namespace \
+  --namespace $NAMESPACE \
+  --set controller.service.loadBalancerIP=$PUBLIC_IP \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+```
+
+en ayant défini NAMESPACE et PUBLIC_IP (mettre l'ip créée précédement dans azure) avant de lancer la commande.
+
+Après il ne vous reste plus qu'à déployer votre application avec k8 en ayant crée les fichiers yaml et faire un kubectl deploy.
+
+Malheuresement, nous avons eu des problèmes au niveau de helm et de l'ingress controller qui nous ont stoppé dans le projet.
+Comme par exemple :
+`Error: INSTALLATION FAILED: cannot re-use a name that is still in use` lors de la création de l'ingress controller. Pour résumer, notre projet est incomplet sur la fin.
+
+## Docker et ACR
+
+Je vais finir par comment envoyer les images docker sur l'acr:
+`az login` puis `az acr login --name myregistry` où myregistery correspond au nom de votre ACR (ici cresgipiedalluselwa.azurecr.io)
+
+#### Run the container locally
+
+`docker run <mon_image_docker>`
+
+#### Créer un alias de l'image
+
+`docker tag <mon_image_docker> <my_rtegistery>.azurecr.io/<mon_image_docker>`
+
+#### Push the image to your registry
+
+`docker push <my_rtegistery>.azurecr.io/<mon_image_docker>`
+
+Ensuite, avec kubernetes, vous créer un service principal (doc d'Azure) :
+
+```
+#!/bin/bash
+# This script requires Azure CLI version 2.25.0 or later. Check version with `az --version`.
+
+# Modify for your environment.
+# ACR_NAME: The name of your Azure Container Registry
+# SERVICE_PRINCIPAL_NAME: Must be unique within your AD tenant
+ACR_NAME=$containerRegistry
+SERVICE_PRINCIPAL_NAME=$servicePrincipal
+
+# Obtain the full registry ID
+ACR_REGISTRY_ID=$(az acr show --name $ACR_NAME --query "id" --output tsv)
+# echo $registryId
+
+# Create the service principal with rights scoped to the registry.
+# Default permissions are for docker pull access. Modify the '--role'
+# argument value as desired:
+# acrpull:     pull only
+# acrpush:     push and pull
+# owner:       push, pull, and assign roles
+PASSWORD=$(az ad sp create-for-rbac --name $SERVICE_PRINCIPAL_NAME --scopes $ACR_REGISTRY_ID --role acrpull --query "password" --output tsv)
+USER_NAME=$(az ad sp list --display-name $SERVICE_PRINCIPAL_NAME --query "[].appId" --output tsv)
+
+# Output the service principal's credentials; use these in your services and
+# applications to authenticate to the container registry.
+echo "Service principal ID: $USER_NAME"
+echo "Service principal password: $PASSWORD"
+```
+
+récupère l'image avec un image pll secret
+
+```
+kubectl create secret docker-registry <secret-name> \
+    --namespace <namespace> \
+    --docker-server=<container-registry-name>.azurecr.io \
+    --docker-username=<service-principal-ID> \
+    --docker-password=<service-principal-password>
+```
+
+il ne vous reste plus qu'a créer vos pods et vos déploiements
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-awesome-app-pod
+  namespace: awesomeapps
+spec:
+  containers:
+    - name: main-app-container
+      image: myregistry.azurecr.io/my-awesome-app:v1
+      imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: acr-secret
+```
